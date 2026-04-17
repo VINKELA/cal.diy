@@ -1,0 +1,48 @@
+name: Deploy Atamatech Scheduler to Mac Mini
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: 🚀 Pull and Deploy Scheduler Container
+        shell: zsh -e {0}
+        run: |
+          export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
+          
+          # Define the deployment directory for the scheduling engine
+          DEPLOY_DIR="/Users/kalu/atamatech-scheduler"
+          
+          # Creates the folder on the Mac Mini
+          mkdir -p $DEPLOY_DIR
+          cd $DEPLOY_DIR
+          
+          # Initialize git if needed
+          if [ ! -d ".git" ]; then
+            git init
+            git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          fi
+          
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          
+          git fetch --all
+          
+          # Pull down the latest code from the main branch
+          git reset --hard origin/main
+          
+          # --- ENV FILE CHECK ---
+          # Ensure the .env file exists on the server before building the containers
+          if [ ! -f ".env" ]; then
+            cp .env.example .env
+            echo "⚠️ WARNING: A fresh .env was created from the template. You will need to SSH into the Mac Mini and add your Atamatech secrets!"
+          fi
+          
+          # --- THE COLIMA SSH BYPASS ---
+          # We bypass the Mac completely and run Docker natively inside the Linux VM!
+          # Note: 'docker compose' (with a space) is used here for modern Docker v2 syntax inside Colima
+          colima ssh -- sh -c "cd $DEPLOY_DIR && docker compose up -d --build"
