@@ -1,4 +1,4 @@
-name: Deploy Atamatech Scheduler to Mac Mini
+name: Deploy  Scheduler to Mac Mini
 
 on:
   push:
