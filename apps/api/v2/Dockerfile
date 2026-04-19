@@ -16,6 +16,9 @@ ENV USE_POOL="true"
 
 COPY . .
 
+# Inject Python and C++ compilers so 'deasync' and other native packages can successfully build on Alpine
+RUN apk add --no-cache python3 make g++
+
 RUN yarn install
 RUN yarn workspace @calcom/api-v2 run generate-schemas
 RUN yarn workspace @calcom/api-v2 run build:docker
